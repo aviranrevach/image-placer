@@ -7,7 +7,7 @@
                        |___/
 ```
 
-# Image Placer
+# Image Placer / by Aviran Revach
 
 A Google Sheets add-on that lets you insert images into multiple cells at once — something Google Sheets doesn't support natively.
 
@@ -81,6 +81,10 @@ Uncheck **"Live sync with sheet"** if you want to type a range manually.
 | `drive.file` | Upload images to Google Drive |
 | `drive.readonly` | Browse existing Drive images |
 | `script.container.ui` | Display the sidebar |
+
+## Author
+
+**Aviran Revach** — [GitHub](https://github.com/aviranrevach)
 
 ## License
 
