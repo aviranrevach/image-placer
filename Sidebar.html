@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Google Sans', Roboto, -apple-system, sans-serif;
+      font-size: 13px;
+      color: #202124;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #1a73e8;
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+
+    .section { margin-bottom: 16px; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: #5f6368;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Range input */
+    .range-row {
+      display: flex;
+      gap: 6px;
+    }
+    .range-input {
+      flex: 1;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+    }
+    .range-input:focus { border-color: #1a73e8; }
+    .sync-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: #5f6368;
+      cursor: pointer;
+    }
+    .sync-toggle input { margin: 0; cursor: pointer; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 12px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #5f6368;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    .tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .tab:hover { background: #f1f3f4; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed #dadce0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #5f6368;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .drop-zone.dragover {
+      border-color: #1a73e8;
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+    .drop-zone-icon { font-size: 28px; margin-bottom: 4px; }
+    .drop-zone-text { font-size: 12px; }
+    .drop-zone-sub { font-size: 11px; color: #80868b; margin-top: 2px; }
+    #file-input { display: none; }
+
+    .upload-status {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .upload-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .upload-item .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #dadce0;
+      border-top-color: #1a73e8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .upload-item .check { color: #188038; }
+    .upload-item .error { color: #d93025; }
+
+    /* URL input */
+    .url-row {
+      display: flex;
+      gap: 6px;
+    }
+    .url-input {
+      flex: 1;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 12px;
+      outline: none;
+    }
+    .url-input:focus { border-color: #1a73e8; }
+    .btn-add {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-add:hover { background: #1557b0; }
+    .url-error {
+      color: #d93025;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    /* Drive grid */
+    .drive-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      overflow-y: auto;
+    }
+    .drive-thumb-wrap {
+      position: relative;
+      aspect-ratio: 1;
+    }
+    .drive-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .drive-thumb:hover { border-color: #1a73e8; }
+    .drive-thumb.selected { border-color: #188038; }
+    .drive-badge {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: #188038;
+      color: #fff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .drive-thumb.selected + .drive-badge { display: flex; }
+    .drive-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #80868b;
+      font-size: 12px;
+      padding: 12px;
+    }
+    .btn-refresh {
+      background: none;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #1a73e8;
+      cursor: pointer;
+    }
+    .btn-refresh:hover { background: #e8f0fe; }
+
+    /* Action bar */
+    .action-bar {
+      padding: 12px 16px;
+      border-top: 1px solid #e0e0e0;
+      background: #fff;
+    }
+    .action-summary {
+      font-size: 12px;
+      color: #5f6368;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .action-summary strong { color: #202124; }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-insert {
+      flex: 1;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-insert:hover { background: #1557b0; }
+    .btn-insert:disabled { background: #dadce0; color: #80868b; cursor: default; }
+    .btn-clear {
+      background: none;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5f6368;
+      cursor: pointer;
+    }
+    .btn-clear:hover { background: #f1f3f4; }
+
+    /* Status */
+    .status {
+      padding: 8px 16px;
+      font-size: 12px;
+      display: none;
+    }
+    .status.success { display: block; background: #e6f4ea; color: #188038; }
+    .status.error { display: block; background: #fce8e6; color: #d93025; }
+  </style>
+</head>
+<body>
+
+  <div class="header">Image Placer</div>
+
+  <div class="content">
+    <!-- Step 1: Cell Range -->
+    <div class="section">
+      <div class="section-title">1. Cell Range</div>
+      <div class="range-row">
+        <input type="text" class="range-input" id="range-input" placeholder="e.g. C2:C19">
+      </div>
+      <label class="sync-toggle">
+        <input type="checkbox" id="sync-check" checked onchange="toggleSync(this.checked)">
+        <span>Live sync with sheet</span>
+      </label>
+    </div>
+
+    <!-- Step 2: Pick Images -->
+    <div class="section">
+      <div class="section-title">2. Pick Images</div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('drive')">Drive</div>
+        <div class="tab" onclick="switchTab('upload')">Upload</div>
+        <div class="tab" onclick="switchTab('url')">URL</div>
+      </div>
+
+      <div id="tab-drive" class="tab-content active">
+        <div class="url-row" style="margin-bottom:8px">
+          <input type="text" class="url-input" id="drive-search" placeholder="Search images..."
+                 onkeydown="if(event.key==='Enter')searchDrive()">
+          <button class="btn-add" onclick="searchDrive()">Search</button>
+        </div>
+        <div id="drive-grid" class="drive-grid">
+          <div class="drive-empty">Click Search or type a name to find images.</div>
+        </div>
+      </div>
+
+      <div id="tab-upload" class="tab-content">
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="drop-zone-icon">+</div>
+          <div class="drop-zone-text">Drop images here or click to browse</div>
+          <div class="drop-zone-sub">Max 5MB per file</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" multiple>
+        <div class="upload-status" id="upload-status"></div>
+      </div>
+
+      <div id="tab-url" class="tab-content">
+        <div class="url-row">
+          <input type="text" class="url-input" id="url-input" placeholder="https://example.com/image.jpg"
+                 onkeydown="if(event.key==='Enter')addUrl()">
+          <button class="btn-add" onclick="addUrl()">Add</button>
+        </div>
+        <div class="url-error" id="url-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div class="action-bar">
+    <div class="action-summary" id="action-summary">Select a range and pick images to get started.</div>
+    <div class="action-buttons">
+      <button class="btn-insert" id="btn-insert" disabled onclick="insertAll()">Insert Images</button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    var state = { images: [] };
+
+    // --- Auto-sync range from sheet selection ---
+    var rangeInput = document.getElementById('range-input');
+    var syncEnabled = true;
+
+    function toggleSync(on) {
+      syncEnabled = on;
+      if (on) pollSelection();
+    }
+
+    function pollSelection() {
+      if (!syncEnabled) return;
+      google.script.run
+        .withSuccessHandler(function(range) {
+          if (range && rangeInput.value !== range) {
+            rangeInput.value = range;
+            updateSummary();
+          }
+        })
+        .getSelectedRange();
+    }
+
+    // Poll every 1 second
+    pollSelection();
+    setInterval(pollSelection, 1000);
+
+    // Auto-load drive images on open
+    searchDrive();
+
+    // --- Tabs ---
+    var tabNames = ['drive', 'upload', 'url'];
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+      var idx = tabNames.indexOf(tab);
+      if (idx >= 0) {
+        document.querySelectorAll('.tab')[idx].classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+      }
+    }
+
+    // --- Summary ---
+    function updateSummary() {
+      var rangeStr = document.getElementById('range-input').value.trim();
+      var summary = document.getElementById('action-summary');
+      var btn = document.getElementById('btn-insert');
+      var imgCount = state.images.length;
+
+      if (!rangeStr && imgCount === 0) {
+        summary.innerHTML = 'Select a range and pick images to get started.';
+        btn.disabled = true;
+        return;
+      }
+      if (!rangeStr) {
+        summary.innerHTML = '<strong>' + imgCount + '</strong> image(s) selected. Enter a cell range above.';
+        btn.disabled = true;
+        return;
+      }
+      if (imgCount === 0) {
+        summary.innerHTML = 'Range <strong>' + rangeStr + '</strong> set. Now pick images.';
+        btn.disabled = true;
+        return;
+      }
+
+      summary.innerHTML = '<strong>' + imgCount + '</strong> image(s) → <strong>' + rangeStr + '</strong>';
+      btn.disabled = false;
+    }
+
+    document.getElementById('range-input').addEventListener('input', updateSummary);
+
+    // --- File Upload ---
+    var dropZone = document.getElementById('drop-zone');
+    var fileInput = document.getElementById('file-input');
+
+    dropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', function() {
+      dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', function() {
+      handleFiles(fileInput.files);
+      fileInput.value = '';
+    });
+
+    function handleFiles(files) {
+      var statusEl = document.getElementById('upload-status');
+      for (var i = 0; i < files.length; i++) {
+        (function(file) {
+          if (!file.type.startsWith('image/')) {
+            statusEl.innerHTML += '<div class="upload-item"><span class="error">x</span> ' +
+              file.name + ' — not an image</div>';
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            statusEl.innerHTML += '<div class="upload-item"><span class="error">x</span> ' +
+              file.name + ' — exceeds 5MB</div>';
+            return;
+          }
+
+          var itemId = 'upload-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+          statusEl.innerHTML += '<div class="upload-item" id="' + itemId + '">' +
+            '<div class="spinner"></div> Uploading ' + file.name + '...</div>';
+
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var base64 = e.target.result.split(',')[1];
+            google.script.run
+              .withSuccessHandler(function(result) {
+                var el = document.getElementById(itemId);
+                if (el) el.innerHTML = '<span class="check">&#10003;</span> ' + result.name;
+                state.images.push({ url: result.url, name: result.name });
+                updateSummary();
+              })
+              .withFailureHandler(function(err) {
+                var el = document.getElementById(itemId);
+                if (el) el.innerHTML = '<span class="error">x</span> ' + file.name + ' — ' + err.message;
+              })
+              .uploadFileToDrive({ name: file.name, mimeType: file.type, base64: base64 });
+          };
+          reader.readAsDataURL(file);
+        })(files[i]);
+      }
+    }
+
+    // --- URL Input ---
+    function addUrl() {
+      var input = document.getElementById('url-input');
+      var errorEl = document.getElementById('url-error');
+      var url = input.value.trim();
+      errorEl.textContent = '';
+
+      if (!url.match(/^https?:\/\/.+/)) {
+        errorEl.textContent = 'Enter a valid URL starting with http:// or https://';
+        return;
+      }
+
+      state.images.push({ url: url, name: url.split('/').pop().split('?')[0] || 'image' });
+      input.value = '';
+      updateSummary();
+    }
+
+    // --- Google Drive Browser ---
+    var driveFiles = [];
+
+    function searchDrive() {
+      var query = document.getElementById('drive-search').value.trim();
+      var grid = document.getElementById('drive-grid');
+      grid.innerHTML = '<div class="drive-empty"><div class="spinner" style="margin:0 auto"></div> Loading...</div>';
+
+      google.script.run
+        .withSuccessHandler(function(files) {
+          driveFiles = files;
+          if (files.length === 0) {
+            grid.innerHTML = '<div class="drive-empty">No images found.</div>';
+            return;
+          }
+          var html = '';
+          for (var i = 0; i < files.length; i++) {
+            html += '<div class="drive-thumb-wrap">' +
+              '<img class="drive-thumb" src="' + files[i].thumb + '"' +
+              ' title="' + files[i].name + '"' +
+              ' data-index="' + i + '"' +
+              ' onclick="toggleDriveImage(' + i + ', this)"' +
+              ' onerror="this.style.display=\'none\'">' +
+              '<div class="drive-badge" id="badge-' + i + '"></div>' +
+              '</div>';
+          }
+          grid.innerHTML = html;
+        })
+        .withFailureHandler(function(err) {
+          grid.innerHTML = '<div class="drive-empty">Error: ' + err.message + '</div>';
+        })
+        .searchDriveImages(query);
+    }
+
+    function toggleDriveImage(index, el) {
+      var file = driveFiles[index];
+      if (el.classList.contains('selected')) {
+        el.classList.remove('selected');
+        for (var i = state.images.length - 1; i >= 0; i--) {
+          if (state.images[i].url === file.url) {
+            state.images.splice(i, 1);
+            break;
+          }
+        }
+      } else {
+        el.classList.add('selected');
+        state.images.push({ url: file.url, name: file.name });
+      }
+      updateBadges();
+      updateSummary();
+    }
+
+    function updateBadges() {
+      // Show selection order numbers on Drive thumbnails
+      var thumbs = document.querySelectorAll('.drive-thumb');
+      thumbs.forEach(function(thumb) {
+        var idx = parseInt(thumb.dataset.index);
+        var file = driveFiles[idx];
+        var badge = document.getElementById('badge-' + idx);
+        if (!badge) return;
+        var imgIndex = -1;
+        for (var i = 0; i < state.images.length; i++) {
+          if (state.images[i].url === file.url) { imgIndex = i; break; }
+        }
+        if (imgIndex >= 0) {
+          badge.style.display = 'flex';
+          badge.textContent = imgIndex + 1;
+        } else {
+          badge.style.display = 'none';
+        }
+      });
+    }
+
+    // --- Insert ---
+    function insertAll() {
+      var rangeStr = document.getElementById('range-input').value.trim();
+      var btn = document.getElementById('btn-insert');
+      var statusEl = document.getElementById('status');
+      btn.disabled = true;
+      btn.textContent = 'Inserting...';
+      statusEl.className = 'status';
+      statusEl.textContent = '';
+
+      // First, parse the range server-side to get individual cells
+      google.script.run
+        .withSuccessHandler(function(cells) {
+          if (!cells || cells.length === 0) {
+            btn.textContent = 'Insert Images';
+            btn.disabled = false;
+            statusEl.className = 'status error';
+            statusEl.textContent = 'Invalid range. Check your cell range and try again.';
+            return;
+          }
+
+          var mappings = [];
+          var count = Math.min(cells.length, state.images.length);
+          for (var i = 0; i < count; i++) {
+            mappings.push({ a1: cells[i], url: state.images[i].url });
+          }
+
+          google.script.run
+            .withSuccessHandler(function(result) {
+              btn.textContent = 'Insert Images';
+              btn.disabled = false;
+              var msg = result.success + ' image(s) inserted successfully!';
+              if (result.errors.length > 0) {
+                msg += ' ' + result.errors.length + ' error(s).';
+                statusEl.className = 'status error';
+              } else {
+                statusEl.className = 'status success';
+              }
+              statusEl.textContent = msg;
+            })
+            .withFailureHandler(function(err) {
+              btn.textContent = 'Insert Images';
+              btn.disabled = false;
+              statusEl.className = 'status error';
+              statusEl.textContent = 'Error: ' + err.message;
+            })
+            .insertImages(mappings);
+        })
+        .withFailureHandler(function(err) {
+          btn.textContent = 'Insert Images';
+          btn.disabled = false;
+          statusEl.className = 'status error';
+          statusEl.textContent = 'Invalid range: ' + err.message;
+        })
+        .parseCellRange(rangeStr);
+    }
+
+    // --- Clear ---
+    function clearAll() {
+      state.images = [];
+      document.getElementById('upload-status').innerHTML = '';
+      document.querySelectorAll('.drive-thumb.selected').forEach(function(el) { el.classList.remove('selected'); });
+      updateBadges();
+      document.getElementById('status').className = 'status';
+      document.getElementById('status').textContent = '';
+      updateSummary();
+    }
+  </script>
+</body>
+</html>
