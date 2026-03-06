@@ -156,6 +156,17 @@
       cursor: pointer;
     }
     .btn-add:hover { background: #1557b0; }
+    .url-textarea {
+      width: 100%;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: monospace;
+      outline: none;
+      resize: vertical;
+    }
+    .url-textarea:focus { border-color: #1a73e8; }
     .url-error {
       color: #d93025;
       font-size: 11px;
@@ -317,11 +328,9 @@
       </div>
 
       <div id="tab-url" class="tab-content">
-        <div class="url-row">
-          <input type="text" class="url-input" id="url-input" placeholder="https://example.com/image.jpg"
-                 onkeydown="if(event.key==='Enter')addUrl()">
-          <button class="btn-add" onclick="addUrl()">Add</button>
-        </div>
+        <textarea class="url-textarea" id="url-input" rows="8"
+                  placeholder="Paste image URLs here, one per line:&#10;&#10;https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"></textarea>
+        <button class="btn-add" onclick="addUrls()" style="width:100%;margin-top:6px">Add URLs</button>
         <div class="url-error" id="url-error"></div>
       </div>
     </div>
@@ -471,20 +480,32 @@
     }
 
     // --- URL Input ---
-    function addUrl() {
+    function addUrls() {
       var input = document.getElementById('url-input');
       var errorEl = document.getElementById('url-error');
-      var url = input.value.trim();
+      var lines = input.value.split('\n');
+      var added = 0;
+      var invalid = [];
       errorEl.textContent = '';
 
-      if (!url.match(/^https?:\/\/.+/)) {
-        errorEl.textContent = 'Enter a valid URL starting with http:// or https://';
-        return;
+      for (var i = 0; i < lines.length; i++) {
+        var url = lines[i].trim();
+        if (!url) continue;
+        if (!url.match(/^https?:\/\/.+/)) {
+          invalid.push(url.substring(0, 40));
+          continue;
+        }
+        state.images.push({ url: url, name: url.split('/').pop().split('?')[0] || 'image' });
+        added++;
       }
 
-      state.images.push({ url: url, name: url.split('/').pop().split('?')[0] || 'image' });
-      input.value = '';
-      updateSummary();
+      if (invalid.length > 0) {
+        errorEl.textContent = invalid.length + ' invalid URL(s) skipped.';
+      }
+      if (added > 0) {
+        input.value = '';
+        updateSummary();
+      }
     }
 
     // --- Google Drive Browser ---

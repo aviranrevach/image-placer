@@ -18,7 +18,7 @@ A Google Sheets add-on that lets you insert images into multiple cells at once �
 - **3 image sources:**
   - **Drive** — browse and search your Google Drive images with thumbnail grid
   - **Upload** — drag-and-drop or browse local files (auto-uploaded to Drive)
-  - **URL** — paste any public image URL
+  - **URL** — paste one or multiple image URLs (one per line)
 - **Numbered selection** — green badges show the order images will be placed
 - **Sidebar UI** — clean, Material-style panel that stays open while you work
 
